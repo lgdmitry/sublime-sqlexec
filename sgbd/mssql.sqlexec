@@ -1,0 +1,24 @@
+{
+    "sql_exec": {
+        "options": [],
+        "before": [],
+        "args": "-S {options.host} -U \"{options.username}\" -P \"{options.password}\" -d \"{options.database}\"",
+        "queries": {
+            "desc" : {
+                "query": "select * from INFORMATION_SCHEMA.tables ",
+                "options": ["-q"],
+                "format" : "|%s|",
+            },
+            "desc table"
+                "query": "exec sp_columns `%s`",
+                "options": ["-q"],
+                "format" : "|%s|",
+            },
+            "show records": {
+                "query": "select * from `%s` limit 100",
+                "options": ["-q"],
+                "format" : "|%s|",
+            }
+        }
+    }
+}
