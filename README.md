@@ -1,13 +1,2 @@
-sublime-sqlexec
-===============
-
-A Plugin for running SQL commands in Sublime Text.
-
-
-## Authors
-
-* Julien Martin
-
-## Installation and Configuration
-
-[Full documentation on official site](http://lubriciousdevelopers.github.io/projects/sublime-sql-exec/)
+# msSQLexec
+Edited plugin SQLExec for Sublime Text 3, allowing the use of 

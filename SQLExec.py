@@ -1,4 +1,5 @@
-import sublime, sublime_plugin, tempfile, os, subprocess
+import sublime, sublime_plugin, tempfile, os, subprocess, re
+# from sublime import Region
 
 connection = None
 history = ['']
@@ -8,7 +9,7 @@ class Connection:
         self.settings = sublime.load_settings(options.type + ".sqlexec").get('sql_exec')
         self.command  = sublime.load_settings("SQLExec.sublime-settings").get('sql_exec.commands')[options.type]
         self.options  = options
-
+        
     def _buildCommand(self, options):
         return self.command + ' ' + ' '.join(options) + ' ' + self.settings['args'].format(options=self.options)
 
@@ -21,12 +22,13 @@ class Connection:
             self.tmp.write(query)
         self.tmp.close()
 
-        cmd = '%s < "%s"' % (command, self.tmp.name)
+        cmd = '%s "%s"' % (command, self.tmp.name)
 
         return Command(cmd)
 
     def execute(self, queries):
         command = self._getCommand(self.settings['options'], queries)
+
         command.show()
         os.unlink(self.tmp.name)
 
@@ -34,16 +36,18 @@ class Connection:
         query = self.settings['queries']['desc']['query']
         command = self._getCommand(self.settings['queries']['desc']['options'], query)
 
+        command.show()
         tables = []
         for result in command.run().splitlines():
             try:
-                tables.append(result.split('|')[1].strip())
+                tables.append(result.split('|')[0].strip())
             except IndexError:
                 pass
 
         os.unlink(self.tmp.name)
 
-        return tables
+        return tables[2:len(tables)-2] #eliminace zahlavi, zapati
+
 
     def descTable(self, tableName):
         query = self.settings['queries']['desc table']['query'] % tableName
@@ -88,7 +92,8 @@ class Command:
         if not results and errors:
             self._errors(errors.decode('utf-8', 'replace').replace('\r', ''))
 
-        return results.decode('utf-8', 'replace').replace('\r', '')
+        temps = results.decode('utf-8', 'replace').replace('\r', '')
+        return temps
 
     def show(self):
         results = self.run()
@@ -101,12 +106,11 @@ class Selection:
         self.view = view
     def getQueries(self):
         text = []
-        if self.view.sel():
-            for region in self.view.sel():
-                if region.empty():
-                    text.append(self.view.substr(self.view.line(region)))
-                else:
-                    text.append(self.view.substr(region))
+        for region in self.view.sel():
+            if region.empty():
+                text.append(self.view.substr(Region(0, self.view.size())))
+            else:
+                text.append(self.view.substr(region))
         return text
 
 class Options:
@@ -139,7 +143,7 @@ def sqlChangeConnection(index):
     names = Options.list()
     options = Options(names[index])
     connection = Connection(options)
-    sublime.status_message(' SQLExec: switched to %s' % names[index])
+    sublime.status_message(' SQLExec: switched to connection %s' % names[index])
 
 def showTableRecords(index):
     global connection
@@ -190,6 +194,7 @@ class sqlShowRecords(sublime_plugin.WindowCommand):
     def run(self):
         global connection
         if connection != None:
+            # tables = connection.showTableRecords()
             tables = connection.desc()
             sublime.active_window().show_quick_panel(tables, showTableRecords)
         else:
@@ -216,3 +221,5 @@ class sqlExecute(sublime_plugin.WindowCommand):
 class sqlListConnection(sublime_plugin.WindowCommand):
     def run(self):
         sublime.active_window().show_quick_panel(Options.list(), sqlChangeConnection)
+
+      

@@ -1,0 +1,31 @@
+{
+    "sql_exec": {
+        "options": [],
+        "before": [],
+        "args": "-S {options.host} -U \"{options.username}\" -P \"{options.password}\" -d \"{options.database}\" -s \"|\" -i",
+        "queries": {
+        /*	"desc" : "select * from SYSOBJECTS where type = 'U' order by name",
+            "desc table": "exec sp_help %s",
+            "show records": "select * from %s",
+            }*/
+            "desc" : {
+                "query": "select * from SYSOBJECTS where type = 'U' order by name",
+                "options": ["-Y15"],
+                "format" : "|%s|",
+            },
+            "desc table": {
+                "query": "exec sp_help %s",
+                "options": ["-Y15"],
+                "format" : "|%s|",
+            },
+            "show records": {
+                "query": "select * from %s",
+                "options": ["-Y15"],
+                "format" : "|%s|",
+            },
+            "execute": {
+
+            }
+        }
+    }
+}
