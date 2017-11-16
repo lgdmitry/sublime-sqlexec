@@ -1,5 +1,5 @@
 import sublime, sublime_plugin, tempfile, os, subprocess, re
-# from sublime import Region
+from sublime import Region
 
 connection = None
 history = ['']
@@ -9,7 +9,7 @@ class Connection:
         self.settings = sublime.load_settings(options.type + ".sqlexec").get('sql_exec')
         self.command  = sublime.load_settings("SQLExec.sublime-settings").get('sql_exec.commands')[options.type]
         self.options  = options
-        
+
     def _buildCommand(self, options):
         return self.command + ' ' + ' '.join(options) + ' ' + self.settings['args'].format(options=self.options)
 
@@ -23,11 +23,13 @@ class Connection:
         self.tmp.close()
 
         cmd = '%s "%s"' % (command, self.tmp.name)
-
+        print(cmd)
         return Command(cmd)
 
     def execute(self, queries):
-        command = self._getCommand(self.settings['options'], queries)
+        options = list(self.settings['options'])
+        options.append(self.options.output)
+        command = self._getCommand(options, queries)
 
         command.show()
         os.unlink(self.tmp.name)
@@ -36,7 +38,7 @@ class Connection:
         query = self.settings['queries']['desc']['query']
         command = self._getCommand(self.settings['queries']['desc']['options'], query)
 
-        command.show()
+        # command.show()
         tables = []
         for result in command.run().splitlines():
             try:
@@ -48,17 +50,61 @@ class Connection:
 
         return tables[2:len(tables)-2] #eliminace zahlavi, zapati
 
+    def selectProc(self):
+        query = self.settings['queries']['select proc']['query']
+        command = self._getCommand(self.settings['queries']['select proc']['options'], query)
+
+        # command.show()
+        tables = []
+        for result in command.run().splitlines():
+            try:
+                tables.append(result.split('|')[0].strip())
+            except IndexError:
+                pass
+
+        os.unlink(self.tmp.name)
+
+        return tables[2:len(tables)-2] #eliminace zahlavi, zapati
+
+    def selectTable(self):
+        query = self.settings['queries']['select table']['query']
+        print(query)
+        command = self._getCommand(self.settings['queries']['select table']['options'], query)
+        # command.show()
+        tables = []
+        for result in command.run().splitlines():
+            try:
+                tables.append(result.split('|')[0].strip())
+            except IndexError:
+                pass
+
+        os.unlink(self.tmp.name)
+
+        return tables[2:len(tables)-2] #eliminace zahlavi, zapati
 
     def descTable(self, tableName):
         query = self.settings['queries']['desc table']['query'] % tableName
-        command = self._getCommand(self.settings['queries']['desc table']['options'], query)
+        options = list(self.settings['queries']['desc table']['options'])
+        options.append(self.options.output)
+        command = self._getCommand(options, query)
         command.show()
 
         os.unlink(self.tmp.name)
 
     def showTableRecords(self, tableName):
         query = self.settings['queries']['show records']['query'] % tableName
-        command = self._getCommand(self.settings['queries']['show records']['options'], query)
+        options = list(self.settings['queries']['show records']['options'])
+        options.append(self.options.output)
+        command = self._getCommand(options, query)
+        command.show()
+
+        os.unlink(self.tmp.name)
+
+    def showProcCode(self, objName):
+        query = self.settings['queries']['show code']['query'] % objName[0]
+        options = list(self.settings['queries']['show code']['options'])
+        options.append(self.options.output)
+        command = self._getCommand(options, query)
         command.show()
 
         os.unlink(self.tmp.name)
@@ -123,6 +169,12 @@ class Options:
         self.username = connections[self.name]['username']
         self.password = connections[self.name]['password']
         self.database = connections[self.name]['database']
+        output = connections[self.name]['output']
+        if output.strip():
+            self.output = '-o ' + output
+        else:
+            self.output = ''
+
         if 'service' in connections[self.name]:
             self.service  = connections[self.name]['service']
 
@@ -149,7 +201,8 @@ def showTableRecords(index):
     global connection
     if index > -1:
         if connection != None:
-            tables = connection.desc()
+            print('command: showTableRecords')
+            tables = connection.selectTable()
             connection.showTableRecords(tables[index])
         else:
             sublime.error_message('No active connection')
@@ -195,7 +248,7 @@ class sqlShowRecords(sublime_plugin.WindowCommand):
         global connection
         if connection != None:
             # tables = connection.showTableRecords()
-            tables = connection.desc()
+            tables = connection.selectTable()
             sublime.active_window().show_quick_panel(tables, showTableRecords)
         else:
             sublime.error_message('No active connection')
@@ -222,4 +275,21 @@ class sqlListConnection(sublime_plugin.WindowCommand):
     def run(self):
         sublime.active_window().show_quick_panel(Options.list(), sqlChangeConnection)
 
-      
+class sqlHelpText(sublime_plugin.WindowCommand):
+    def run(self):
+        global connection
+        if connection != None:
+            selection = Selection(self.window.active_view())
+            connection.showProcCode(selection.getQueries())
+        else:
+            sublime.error_message('No active connection')
+
+class sqlHelp(sublime_plugin.WindowCommand):
+    def run(self):
+        global connection
+        if connection != None:
+            selection = Selection(self.window.active_view())
+            connection.descTable(selection.getQueries()[0])
+        else:
+            sublime.error_message('No active connection')
+

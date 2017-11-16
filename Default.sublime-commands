@@ -22,5 +22,17 @@
   {
     "caption": "SQLExec: Desc Table",
     "command": "sql_desc"
-  }
+  },
+  {
+    "caption": "SQLExec: Show Procedure Code",
+    "command": "sql_show_code"
+  },
+  {
+    "caption": "SQLExec: Help Text",
+    "command": "sql_help_text"
+  },
+  {
+    "caption": "SQLExec: Help",
+    "command": "sql_help"
+  },
 ]

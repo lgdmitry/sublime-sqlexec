@@ -1,31 +1,46 @@
 {
     "sql_exec": {
-        "options": [],
+        "options": ["-Y30"],
         "before": [],
         "args": "-S {options.host} -U \"{options.username}\" -P \"{options.password}\" -d \"{options.database}\" -s \"|\" -i",
         "queries": {
         /*	"desc" : "select * from SYSOBJECTS where type = 'U' order by name",
             "desc table": "exec sp_help %s",
             "show records": "select * from %s",
-            }*/
+        }*/
             "desc" : {
-                "query": "select * from SYSOBJECTS where type = 'U' order by name",
-                "options": ["-Y15"],
+                "query": "select Name from sys.objects where type in ('FN','TF','V','IF','P','U') order by type, name;",
+                "options": ["-Y100"],
                 "format" : "|%s|",
             },
             "desc table": {
                 "query": "exec sp_help %s",
-                "options": ["-Y15"],
+                "options": ["-Y30"],
+                "format" : "|%s|",
+            },
+           "select table" : {
+                "query": "select Name from sys.objects where type in ('V','U') order by name;",
+                "options": ["-Y100"],
                 "format" : "|%s|",
             },
             "show records": {
-                "query": "select * from %s",
-                "options": ["-Y15"],
+                "query": "select top 100 * from %s",
+                "options": ["-Y30"],
+                "format" : "|%s|",
+            },
+           "select proc" : {
+                "query": "select Name from sys.objects where type in ('FN','TF','V','IF','P') order by type, name;",
+                "options": ["-Y100"],
+                "format" : "|%s|",
+            },
+            "show code": {
+                "query": "set nocount on;declare @r table (t nvarchar(max)); insert @r exec sp_helptext %s; select REPLACE(REPLACE([t],CHAR(10),''),CHAR(13),'') FROM @r",
+                "options": ["-h -1", "-W"],
                 "format" : "|%s|",
             },
             "execute": {
 
-            }
+            },
         }
     }
 }
