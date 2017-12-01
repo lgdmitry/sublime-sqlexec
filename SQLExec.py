@@ -9,6 +9,13 @@ class Connection:
         self.settings = sublime.load_settings(options.type + ".sqlexec").get('sql_exec')
         self.command  = sublime.load_settings("SQLExec.sublime-settings").get('sql_exec.commands')[options.type]
         self.options  = options
+        outputfile = sublime.load_settings("SQLExec.sublime-settings").get('sql_exec.outputfile')
+
+        if outputfile.strip():
+            self.settings['outputfile'].append(outputfile)
+            self.outputfile = self.settings['outputfile']
+        else:
+            self.outputfile = []
 
     def _buildCommand(self, options):
         return self.command + ' ' + ' '.join(options) + ' ' + self.settings['args'].format(options=self.options)
@@ -27,8 +34,7 @@ class Connection:
         return Command(cmd)
 
     def execute(self, queries):
-        options = list(self.settings['options'])
-        options.append(self.options.output)
+        options = list(self.settings['options']) + self.outputfile
         command = self._getCommand(options, queries)
 
         command.show()
@@ -84,8 +90,7 @@ class Connection:
 
     def descTable(self, tableName):
         query = self.settings['queries']['desc table']['query'] % tableName
-        options = list(self.settings['queries']['desc table']['options'])
-        options.append(self.options.output)
+        options = list(self.settings['queries']['desc table']['options']) + self.outputfile
         command = self._getCommand(options, query)
         command.show()
 
@@ -93,8 +98,7 @@ class Connection:
 
     def showTableRecords(self, tableName):
         query = self.settings['queries']['show records']['query'] % tableName
-        options = list(self.settings['queries']['show records']['options'])
-        options.append(self.options.output)
+        options = list(self.settings['queries']['show records']['options']) + self.outputfile
         command = self._getCommand(options, query)
         command.show()
 
@@ -102,8 +106,7 @@ class Connection:
 
     def showProcCode(self, objName):
         query = self.settings['queries']['show code']['query'] % objName[0]
-        options = list(self.settings['queries']['show code']['options'])
-        options.append(self.options.output)
+        options = list(self.settings['queries']['show code']['options']) + self.outputfile
         command = self._getCommand(options, query)
         command.show()
 

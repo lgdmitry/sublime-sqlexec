@@ -1,8 +1,9 @@
 {
     "sql_exec": {
-        "options": ["-f", "--table"],
+        "outputfile" : [">"],
+        "options": ["-f", "--table","-B"],
         "before": [],
-        "args": "-h{options.host} -P{options.port} -u\"{options.username}\" -p\"{options.password}\" -D\"{options.database}\"",
+        "args": "-h{options.host} -P{options.port} -u\"{options.username}\" -p\"{options.password}\" -D\"{options.database}\" < ",
         "queries": {
             "desc" : {
                 "query": "show tables",

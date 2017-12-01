@@ -1,5 +1,6 @@
 {
     "sql_exec": {
+        "outputfile" : ["-o"],
         "options": ["-Y30"],
         "before": [],
         "args": "-S {options.host} -U \"{options.username}\" -P \"{options.password}\" -d \"{options.database}\" -s \"|\" -i",
