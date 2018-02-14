@@ -1,4 +1,4 @@
-import sublime, sublime_plugin, tempfile, os, subprocess, re
+import sublime, sublime_plugin, tempfile, os, subprocess, re #, asyncio
 from sublime import Region
 
 connection = None
@@ -9,6 +9,7 @@ class Connection:
         self.settings = sublime.load_settings(options.type + ".sqlexec").get('sql_exec')
         self.command  = sublime.load_settings("SQLExec.sublime-settings").get('sql_exec.commands')[options.type]
         self.options  = options
+        self.isOptions = 1;
         outputfile = sublime.load_settings("SQLExec.sublime-settings").get('sql_exec.outputfile')
 
         if outputfile.strip():
@@ -33,12 +34,37 @@ class Connection:
         print(cmd)
         return Command(cmd)
 
+    def setOptions(self):
+        self.isOptions = ~self.isOptions
+
+    def setDatabaes(self, index):
+        self.options.database = self.tempArray[index]
+
     def execute(self, queries):
-        options = list(self.settings['options']) + self.outputfile
+        if self.isOptions == 1:
+            options = list(self.settings['options']) + self.outputfile
+        else:
+            options = list(self.outputfile)
         command = self._getCommand(options, queries)
 
-        command.show()
+        command.run()
         os.unlink(self.tmp.name)
+
+    def showDatabases(self):
+        query = self.settings['queries']['show databases']['query']
+        command = self._getCommand(self.settings['queries']['show databases']['options'], query)
+
+        # command.show()
+        db = []
+        for result in command.run().splitlines():
+            try:
+                db.append(result.split('|')[0].strip())
+            except IndexError:
+                pass
+        os.unlink(self.tmp.name)
+
+        self.tempArray = db[2:len(db)-2]
+        return self.tempArray
 
     def desc(self):
         query = self.settings['queries']['desc']['query']
@@ -54,7 +80,9 @@ class Connection:
 
         os.unlink(self.tmp.name)
 
-        return tables[2:len(tables)-2] #eliminace zahlavi, zapati
+        self.tempArray = tables[2:len(tables)-2]
+        return self.tempArray
+        # return tables[2:len(tables)-2] #eliminace zahlavi, zapati
 
     def selectProc(self):
         query = self.settings['queries']['select proc']['query']
@@ -90,7 +118,11 @@ class Connection:
 
     def descTable(self, tableName):
         query = self.settings['queries']['desc table']['query'] % tableName
-        options = list(self.settings['queries']['desc table']['options']) + self.outputfile
+        if self.isOptions == 1:
+            options = list(self.settings['queries']['desc table']['options']) + self.outputfile
+        else:
+            options = list(self.outputfile)
+
         command = self._getCommand(options, query)
         command.show()
 
@@ -143,6 +175,10 @@ class Command:
 
         temps = results.decode('utf-8', 'replace').replace('\r', '')
         return temps
+
+    def run2(self):
+        sublime.status_message(' SQLExec: running SQL command')
+        p = subprocess.Popen(self.text, stdout=subprocess.PIPE,stderr=subprocess.PIPE, shell=True).communicate()
 
     def show(self):
         results = self.run()
@@ -214,8 +250,9 @@ def descTable(index):
     global connection
     if index > -1:
         if connection != None:
-            tables = connection.desc()
-            connection.descTable(tables[index])
+            # tables = connection.desc()
+            # connection.descTable(tables[index])
+            connection.descTable(connection.tempArray[index])
         else:
             sublime.error_message('No active connection')
 
@@ -231,6 +268,13 @@ def executeQuery(query):
     history = list(set(history))
     if connection != None:
         connection.execute(query)
+
+def setDatabaes(database):
+    global connection
+    if connection != None:
+        connection.setDatabaes(database)
+    else:
+        sublime.error_message('No active connection')
 
 class sqlHistory(sublime_plugin.WindowCommand):
     global history
@@ -296,3 +340,20 @@ class sqlHelp(sublime_plugin.WindowCommand):
         else:
             sublime.error_message('No active connection')
 
+class sqlSetOptions(sublime_plugin.WindowCommand):
+    def run(self):
+        global connection
+        if connection != None:
+            selection = Selection(self.window.active_view())
+            connection.setOptions()
+        else:
+            sublime.error_message('No active connection')
+
+class sqlShowDatabases(sublime_plugin.WindowCommand):
+    def run(self):
+        global connection
+        if connection != None:
+            db = connection.showDatabases()
+            sublime.active_window().show_quick_panel(db, setDatabaes)
+        else:
+            sublime.error_message('No active connection')

@@ -25,7 +25,7 @@
                 "format" : "|%s|",
             },
             "show records": {
-                "query": "select top 100 * from %s",
+                "query": "select top 1000 * from %s",
                 "options": ["-Y30"],
                 "format" : "|%s|",
             },
@@ -40,8 +40,15 @@
                 "format" : "|%s|",
             },
             "execute": {
-
+                "options": ["-Y100"]
             },
+
+            "show databases" : {
+                "query": "select [name] from sys.databases",
+                "options": ["-Y100"],
+                "format" : "|%s|",
+            },
+
         }
     }
 }

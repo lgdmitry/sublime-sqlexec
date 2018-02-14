@@ -35,4 +35,12 @@
     "caption": "SQLExec: Help",
     "command": "sql_help"
   },
+  {
+    "caption": "SQLExec: SetOptions",
+    "command": "sql_set_options"
+  },
+  {
+    "caption": "SQLExec: Change Database",
+    "command": "sql_show_databases"
+  },
 ]
